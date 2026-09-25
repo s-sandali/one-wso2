@@ -18,6 +18,7 @@
 
 import { useState } from "react";
 import { MenuItem, Select } from "@wso2/oxygen-ui";
+import { useFinanceGate } from "../api/useFinanceGate";
 import CcDashboardPage from "../cc/pages/CcDashboardPage";
 import OpdDashboardScreen from "../opd/dashboard/OpdDashboardScreen";
 
@@ -47,13 +48,23 @@ const OVERVIEW_SECTIONS: { value: OverviewTab; label: string }[] = [
  * notice, not a missing option.
  */
 export default function FinanceOverviewPage() {
-  const [section, setSection] = useState<OverviewTab>("cc");
+  const gate = useFinanceGate();
+  // Derived-with-override, the same pattern NeedsYouTab's `expenseStage` and
+  // CcApprovePage's `role` use: `picked` is null until someone chooses, and
+  // the default is recomputed every render rather than captured once — a
+  // plain `useState("cc")` would freeze on "cc" even after the OPD-only
+  // reader's access resolved, since nothing ever re-triggers a `useState`
+  // initializer. An OPD-only approver (no card, no CC role) opens straight
+  // on the dashboard they can actually use; everyone else keeps the current
+  // "cc" default.
+  const [picked, setPicked] = useState<OverviewTab | null>(null);
+  const section: OverviewTab = picked ?? (!gate.ccHasOwnCard && gate.opdFinance ? "opd" : "cc");
 
   const switcher = (
     <Select
       size="small"
       value={section}
-      onChange={(e) => setSection(e.target.value as OverviewTab)}
+      onChange={(e) => setPicked(e.target.value as OverviewTab)}
       inputProps={{ "aria-label": "Overview section" }}
       sx={{ minWidth: 220 }}
     >

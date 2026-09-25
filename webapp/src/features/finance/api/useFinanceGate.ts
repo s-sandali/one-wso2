@@ -44,6 +44,14 @@ const RESTRICTED_IDS = new Set(
 export interface FinanceGate {
   canSee: (itemId: string) => boolean;
   isResolving: boolean;
+  /**
+   * The two raw signals behind the `finance-overview` case, exposed so a
+   * caller with a choice to make — which dashboard FinanceOverviewPage
+   * should default to — can use the SAME resolved access `canSee` already
+   * computed, rather than re-deriving it from the backends itself.
+   */
+  ccHasOwnCard: boolean;
+  opdFinance: boolean;
 }
 
 export function useFinanceGate(enabled = true): FinanceGate {
@@ -106,5 +114,5 @@ export function useFinanceGate(enabled = true): FinanceGate {
   };
 
   const isResolving = enabled && (cc.isLoading || opd.isLoading || expense.isLoading);
-  return { canSee, isResolving };
+  return { canSee, isResolving, ccHasOwnCard, opdFinance };
 }

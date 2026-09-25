@@ -208,6 +208,14 @@ export default function DecidedTab() {
   // tell an approver nothing is waiting when nothing had loaded.
     (expenseAppData.isError && describeError(expenseAppData.error)) ||
     (opdUserInfo.isError && describeError(opdUserInfo.error)) ||
+    // `canLead` alone is not enough to run the lead-decided query — it also
+    // needs `myEmail` to scope to this person's own reports. A required
+    // TypeScript field is not a runtime guarantee: `userInfo` can come back
+    // without a `workEmail`, silently disabling the query rather than
+    // failing it, which reads as "nothing decided" for someone who
+    // genuinely holds the role.
+    (canLead && !myEmail &&
+      "Your account is missing a work email, so your lead queue can't be scoped to your reports.") ||
     (leadDecided.isError && describeError(leadDecided.error)) ||
     (financeDecided.isError && describeError(financeDecided.error)) ||
     (opdDecided.isError && describeError(opdDecided.error)) ||

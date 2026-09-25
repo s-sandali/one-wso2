@@ -149,6 +149,15 @@ function HistoryBody() {
           >
             Couldn&apos;t load your claims.
           </ErrorNotice>
+        ) : !email ? (
+          // `claims` is disabled on a missing `email` rather than failing —
+          // a required TypeScript field on `userInfo` is not a runtime
+          // guarantee, and without this the disabled query would silently
+          // read as "no claims match these filters" instead of the actual
+          // problem: the account has no work email to search against.
+          <Alert severity="error">
+            Your account is missing a work email, so your claim history can&apos;t be loaded.
+          </Alert>
         ) : (claims.data?.length ?? 0) === 0 ? (
           <Typography sx={{ fontSize: 13, color: "text.secondary", py: 3 }}>
             No claims match these filters.
