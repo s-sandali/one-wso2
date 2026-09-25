@@ -45,13 +45,20 @@ export interface FinanceGate {
   canSee: (itemId: string) => boolean;
   isResolving: boolean;
   /**
-   * The two raw signals behind the `finance-overview` case, exposed so a
-   * caller with a choice to make — which dashboard FinanceOverviewPage
-   * should default to — can use the SAME resolved access `canSee` already
-   * computed, rather than re-deriving it from the backends itself.
+   * The raw signals behind the `finance-overview` case, exposed so a caller
+   * with a choice to make — which dashboard FinanceOverviewPage should
+   * default to — can use the SAME resolved access `canSee` already computed,
+   * rather than re-deriving it from the backends itself. `opdErrored` in
+   * particular is what lets that default actually land on the OPD tab (with
+   * its own retry) when that's the reason Overview is visible at all —
+   * without it, `finance-overview`'s "a failed lookup counts as a yes"
+   * reasoning below would be true only in the rail, and a no-card reader
+   * would land on the tab that has nothing to show instead of the one
+   * that's erroring and can be retried.
    */
   ccHasOwnCard: boolean;
   opdFinance: boolean;
+  opdErrored: boolean;
 }
 
 export function useFinanceGate(enabled = true): FinanceGate {
@@ -67,6 +74,7 @@ export function useFinanceGate(enabled = true): FinanceGate {
   // dashboard for their team or the company, not for a card of their own.
   const ccHasOwnCard = ccHasAccess(cc.data, "cc_owner") || ccLeadOrFinance;
   const opdFinance = opdHasRole(opd.data, OPD_ROLE.FINANCE_APPROVER);
+  const opdErrored = opd.isError;
   const expenseLead = Boolean(expense.data?.enableLeadView);
   const expenseFinance = Boolean(expense.data?.enableFinanceView);
 
@@ -99,12 +107,15 @@ export function useFinanceGate(enabled = true): FinanceGate {
       // reader with only one of the two still opens straight onto that tab's
       // content; there is no per-tab hiding inside the page.
       //
-      // `opd.isError` counts as a yes, same reasoning as `claim-approval`
+      // `opdErrored` counts as a yes, same reasoning as `claim-approval`
       // above: a failed lookup is not the same answer as "no role", and
       // hiding Overview because OPD's backend had a bad minute would be
       // worse than showing a screen whose OPD tab can't load yet.
+      // `FinanceOverviewPage` reads this same flag to land the default tab
+      // on OPD when it's the reason Overview is visible at all — see
+      // `opdErrored` on `FinanceGate` above.
       case "finance-overview":
-        return ccHasOwnCard || opdFinance || opd.isError;
+        return ccHasOwnCard || opdFinance || opdErrored;
       default:
         // Per-user views (New / Pending / History) are open; any other item
         // that declares `requires` but reaches here fails closed rather than
@@ -114,5 +125,5 @@ export function useFinanceGate(enabled = true): FinanceGate {
   };
 
   const isResolving = enabled && (cc.isLoading || opd.isLoading || expense.isLoading);
-  return { canSee, isResolving, ccHasOwnCard, opdFinance };
+  return { canSee, isResolving, ccHasOwnCard, opdFinance, opdErrored };
 }

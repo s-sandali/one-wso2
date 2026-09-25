@@ -57,8 +57,17 @@ export default function FinanceOverviewPage() {
   // initializer. An OPD-only approver (no card, no CC role) opens straight
   // on the dashboard they can actually use; everyone else keeps the current
   // "cc" default.
+  //
+  // `opdErrored` belongs in this same check, not just `opdFinance`: it's
+  // exactly why `useFinanceGate`'s `finance-overview` case treats a failed
+  // OPD lookup as a reason to show Overview at all (a no-card reader with an
+  // erroring OPD lookup has nothing else that would put them here) — landing
+  // that reader on the empty CC tab instead of the OPD tab with its own
+  // retry would make the rail entry's whole reason for being reachable
+  // invisible.
   const [picked, setPicked] = useState<OverviewTab | null>(null);
-  const section: OverviewTab = picked ?? (!gate.ccHasOwnCard && gate.opdFinance ? "opd" : "cc");
+  const section: OverviewTab =
+    picked ?? (!gate.ccHasOwnCard && (gate.opdFinance || gate.opdErrored) ? "opd" : "cc");
 
   const switcher = (
     <Select

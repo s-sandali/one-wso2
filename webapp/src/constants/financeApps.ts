@@ -34,6 +34,7 @@ import {
   StethoscopeIcon,
 } from "@wso2/oxygen-ui-icons-react";
 import { CC_PATH } from "@features/finance/cc/ccPaths";
+import { FINANCE_OVERVIEW_PATH } from "@features/finance/overview/financeOverviewPaths";
 import type { MenuApp } from "@constants/appMenu";
 
 /**
@@ -102,7 +103,7 @@ export const FINANCE_OVERVIEW_APPS: readonly MenuApp[] = [
         // for a reader with no card of their own and no OPD role — neither
         // tab would have anything to show them.
         requires: ["employee"],
-        path: "/finance/overview",
+        path: FINANCE_OVERVIEW_PATH,
       },
     ],
   },
