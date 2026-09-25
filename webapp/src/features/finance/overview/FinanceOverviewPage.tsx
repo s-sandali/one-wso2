@@ -17,7 +17,7 @@
  */
 
 import { useState } from "react";
-import { MenuItem, Select } from "@wso2/oxygen-ui";
+import { Alert, MenuItem, Select, Skeleton } from "@wso2/oxygen-ui";
 import { useFinanceGate } from "../api/useFinanceGate";
 import CcDashboardPage from "../cc/pages/CcDashboardPage";
 import OpdDashboardScreen from "../opd/dashboard/OpdDashboardScreen";
@@ -35,10 +35,11 @@ const OVERVIEW_SECTIONS: { value: OverviewTab; label: string }[] = [
  * either dashboard. This is the one screen the rail now sends you to; the
  * dropdown does the switching that used to be a second click in the sidebar.
  *
- * No header of its own — the dropdown rides on the same line as whichever
- * dashboard's own eyebrow chip is showing, via `FinanceShell`'s `actions`
- * slot (see `headerActions` below), rather than sitting above it as a
- * second, redundant title.
+ * No header of its own — the dropdown TAKES THE PLACE of whichever
+ * dashboard's own eyebrow chip would show, via `FinanceShell`'s `actions`
+ * slot (see `headerActions` below; `FinanceShell` renders `actions ?? <Chip
+ * .../>`, never both) — the dropdown already says which section is showing,
+ * so the chip would only repeat it.
  *
  * Neither dashboard changed to get here — each is still the exact same
  * default-exported page (own eyebrow chip, title, config-gating, loading and
@@ -58,6 +59,10 @@ export default function FinanceOverviewPage() {
   // on the dashboard they can actually use; everyone else keeps the current
   // "cc" default.
   //
+  // Declared before the access guard below, not after: React's Rules of
+  // Hooks — every hook has to run on every render, so this can't follow an
+  // early return.
+  //
   // `opdErrored` belongs in this same check, not just `opdFinance`: it's
   // exactly why `useFinanceGate`'s `finance-overview` case treats a failed
   // OPD lookup as a reason to show Overview at all (a no-card reader with an
@@ -69,14 +74,31 @@ export default function FinanceOverviewPage() {
   const section: OverviewTab =
     picked ?? (!gate.ccHasOwnCard && (gate.opdFinance || gate.opdErrored) ? "opd" : "cc");
 
+  // The rail hides this entry when `canSee("finance-overview")` is false,
+  // but hiding a link is not access control — the route is still reachable
+  // by a bookmark or a typed URL, the same reasoning `ClaimApprovalTabRoute`
+  // guards each of ITS routes on. Without this check `visibleSections`
+  // below would come back empty for that reader (neither branch of its
+  // filter true) and they'd see a dropdown with nothing in it instead of an
+  // explicit answer. No data exposure either way — same as any finance
+  // route today — just a dead-end UI this closes off.
+  if (gate.isResolving) {
+    return <Skeleton variant="rectangular" height={220} sx={{ borderRadius: 1.5 }} />;
+  }
+  if (!gate.canSee("finance-overview")) {
+    return <Alert severity="info">This isn&apos;t available for your role.</Alert>;
+  }
+
   // Same access this page's own default above already reads — OPD offered
   // only when there's a real reason to open it (the role, or an error worth
   // retrying), CC only with a card of the reader's own or a CC lead/finance
   // role. Without this the dropdown offered every reader "OPD Claims"
   // whether they held the role or not, and picking it landed them on
-  // OpdDashboardScreen's own denial notice instead of a filtered list —
-  // `canSee("finance-overview")` guarantees at least one of the two always
-  // passes, so this is never empty.
+  // OpdDashboardScreen's own denial notice instead of a filtered list.
+  //
+  // Never empty here specifically: the `canSee("finance-overview")` guard
+  // above already returned for anyone who fails both branches of this same
+  // filter, so by this line at least one of them is guaranteed true.
   const visibleSections = OVERVIEW_SECTIONS.filter((s) =>
     s.value === "cc" ? gate.ccHasOwnCard : gate.opdFinance || gate.opdErrored,
   );
