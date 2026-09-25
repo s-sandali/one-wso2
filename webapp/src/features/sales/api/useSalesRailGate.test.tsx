@@ -19,8 +19,9 @@ import { HttpError } from "@api/http";
 
 // The data hook is stubbed so the gate is tested on its own: what it does with each answer
 // meet-app can give, not how that answer is fetched.
-const state: { configured: boolean; isLoading: boolean; error: unknown } = {
+const state: { configured: boolean; isPending: boolean; isLoading: boolean; error: unknown } = {
   configured: true,
+  isPending: false,
   isLoading: false,
   error: null,
 };
@@ -30,7 +31,7 @@ vi.mock("./useSalesData", () => ({
   isSalesBackendConfigured: () => state.configured,
   useSalesUserInfo: (enabled: boolean) => {
     enabledSeen.push(enabled);
-    return { isLoading: state.isLoading, error: state.error };
+    return { isPending: state.isPending, isLoading: state.isLoading, error: state.error };
   },
 }));
 
@@ -42,6 +43,7 @@ const httpError = (status: number) => new HttpError("https://x/user-info", statu
 
 beforeEach(() => {
   state.configured = true;
+  state.isPending = false;
   state.isLoading = false;
   state.error = null;
   enabledSeen.length = 0;
@@ -59,7 +61,18 @@ describe("useSalesRailGate", () => {
   });
 
   it("holds it back while the answer is in flight, so it never flashes in for someone refused", () => {
+    state.isPending = true;
     state.isLoading = true;
+    const g = gate();
+    expect(g.canSee("sales-meetings")).toBe(false);
+    expect(g.isResolving).toBe(true);
+  });
+
+  // Before the caller's identity resolves, the query is disabled: React Query reports it as
+  // pending but NOT loading. That window must hide the row too, or it flashes in and out.
+  it("holds it back while identity is still resolving (query pending but not loading)", () => {
+    state.isPending = true;
+    state.isLoading = false;
     const g = gate();
     expect(g.canSee("sales-meetings")).toBe(false);
     expect(g.isResolving).toBe(true);

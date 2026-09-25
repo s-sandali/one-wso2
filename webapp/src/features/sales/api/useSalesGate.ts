@@ -85,9 +85,12 @@ export interface SalesRailGate {
  * @param enabled - Whether Sales is the active perspective
  */
 export function useSalesRailGate(enabled: boolean): SalesRailGate {
-  const { isLoading, error } = useSalesUserInfo(enabled);
+  const { isPending, isLoading, error } = useSalesUserInfo(enabled);
   const active = enabled && isSalesBackendConfigured();
-  const isResolving = active && isLoading;
+  // isPending as well as isLoading: while the caller's identity is still resolving the query
+  // is disabled, which React Query reports as pending but NOT loading -- checking isLoading
+  // alone let the row show for that moment and then vanish when the 403 arrived.
+  const isResolving = active && (isPending || isLoading);
   return {
     canSee: () => !isResolving && !(active && isForbidden(error)),
     isResolving,
