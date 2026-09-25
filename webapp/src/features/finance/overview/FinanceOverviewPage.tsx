@@ -69,6 +69,18 @@ export default function FinanceOverviewPage() {
   const section: OverviewTab =
     picked ?? (!gate.ccHasOwnCard && (gate.opdFinance || gate.opdErrored) ? "opd" : "cc");
 
+  // Same access this page's own default above already reads — OPD offered
+  // only when there's a real reason to open it (the role, or an error worth
+  // retrying), CC only with a card of the reader's own or a CC lead/finance
+  // role. Without this the dropdown offered every reader "OPD Claims"
+  // whether they held the role or not, and picking it landed them on
+  // OpdDashboardScreen's own denial notice instead of a filtered list —
+  // `canSee("finance-overview")` guarantees at least one of the two always
+  // passes, so this is never empty.
+  const visibleSections = OVERVIEW_SECTIONS.filter((s) =>
+    s.value === "cc" ? gate.ccHasOwnCard : gate.opdFinance || gate.opdErrored,
+  );
+
   const switcher = (
     <Select
       size="small"
@@ -77,7 +89,7 @@ export default function FinanceOverviewPage() {
       inputProps={{ "aria-label": "Overview section" }}
       sx={{ minWidth: 220 }}
     >
-      {OVERVIEW_SECTIONS.map((s) => (
+      {visibleSections.map((s) => (
         <MenuItem key={s.value} value={s.value}>
           {s.label}
         </MenuItem>

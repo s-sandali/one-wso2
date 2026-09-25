@@ -41,10 +41,12 @@ export default function FinanceShell({
   configured: boolean;
   configKey: string; // e.g. "ONE_WSO2_OPD_BACKEND_URL"
   /**
-   * Something to sit on the same line as the eyebrow chip, right-aligned —
+   * Something to sit on this row instead of the eyebrow chip —
    * FinanceOverviewPage's section switcher, so far the only caller of this.
-   * Optional and absent for every other screen, which keeps the chip alone
-   * on its row exactly as before.
+   * Replaces the chip rather than sitting beside it: the switcher already
+   * says which section is showing, so the chip would just repeat it.
+   * Optional and absent for every other screen, which keeps the chip exactly
+   * as before.
    */
   actions?: ReactNode;
   /**
@@ -68,21 +70,25 @@ export default function FinanceShell({
   const fillColumn = { flex: 1, minHeight: 0, display: "flex", flexDirection: "column" } as const;
   return (
     <Box sx={fill ? fillColumn : undefined}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
-        <Chip
-          icon={<eyebrow.icon size={14} />}
-          label={eyebrow.label}
-          color="primary"
-          // Outlined, not filled: white-on-orange at chip text sizes is ~3.6:1
-          // and fails WCAG AA. Outlined routes through the a11y overlay, which
-          // shifts the label and border to primary.dark in light mode.
-          variant="outlined"
-          size="small"
-          // `alignSelf` keeps the chip its own width rather than stretching to
-          // fill the row now that it shares one with `actions`.
-          sx={{ alignSelf: "flex-start" }}
-        />
-        {actions}
+      {/* `actions` present → just itself, right-aligned where it always sat
+          in the row it used to share with the chip. Absent → the chip alone,
+          left-aligned as ever. Never both: the switcher already says which
+          section is showing, so the chip would only repeat it. */}
+      <Stack direction="row" justifyContent={actions ? "flex-end" : "flex-start"} sx={{ mb: 0.5 }}>
+        {actions ?? (
+          <Chip
+            icon={<eyebrow.icon size={14} />}
+            label={eyebrow.label}
+            color="primary"
+            // Outlined, not filled: white-on-orange at chip text sizes is
+            // ~3.6:1 and fails WCAG AA. Outlined routes through the a11y
+            // overlay, which shifts the label and border to primary.dark in
+            // light mode.
+            variant="outlined"
+            size="small"
+            sx={{ alignSelf: "flex-start" }}
+          />
+        )}
       </Stack>
       <Typography variant="h5" sx={{ mb: 0.5 }}>
         {title}
