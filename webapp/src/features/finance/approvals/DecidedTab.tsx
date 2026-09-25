@@ -63,7 +63,7 @@ export default function DecidedTab() {
   const canLead = Boolean(expenseAppData.data?.enableLeadView);
   const canExpenseFinance = Boolean(expenseAppData.data?.enableFinanceView);
   const canOpd = opdHasRole(opdUserInfo.data, OPD_ROLE.FINANCE_APPROVER);
-  const myEmail = expenseAppData.data?.userInfo.workEmail ?? undefined;
+  const myEmail = expenseAppData.data?.userInfo?.workEmail ?? undefined;
 
   // For the review screen's name display — falls back to the bare email until
   // this arrives, same as the standalone Lead/Finance Approvals screens do.

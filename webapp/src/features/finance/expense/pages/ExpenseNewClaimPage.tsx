@@ -107,8 +107,8 @@ function NewClaimBody() {
   const [onBehalfOfEmail, setOnBehalfOfEmail] = useState<string | null>(null);
   const savedDraftOnBehalfOf = appData.data?.draft?.onBehalfOfEmail ?? null;
 
-  const email = appData.data?.userInfo.workEmail ?? "";
-  const leadEmail = appData.data?.userInfo.managerEmail ?? null;
+  const email = appData.data?.userInfo?.workEmail ?? "";
+  const leadEmail = appData.data?.userInfo?.managerEmail ?? null;
 
   // Resolve an address to a display name, falling back to the address itself
   // rather than printing an empty parenthetical.

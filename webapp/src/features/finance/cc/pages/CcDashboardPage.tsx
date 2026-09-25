@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router";
 import {
   Alert,
@@ -84,7 +84,7 @@ interface PickedLead {
   leadName: string;
 }
 
-export default function CcDashboardPage() {
+export default function CcDashboardPage({ headerActions }: { headerActions?: ReactNode } = {}) {
   return (
     <FinanceShell
       eyebrow={FINANCE_EYEBROW.cc}
@@ -92,6 +92,7 @@ export default function CcDashboardPage() {
       subtitle="What is still unsubmitted, how long it has been sitting there, and what has been claimed by category."
       configured={isCcBackendConfigured()}
       configKey="ONE_WSO2_CC_EXPENSES_BACKEND_URL"
+      actions={headerActions}
     >
       <DashboardBody />
     </FinanceShell>

@@ -115,6 +115,7 @@ import OpdNewClaimPage from "@features/finance/opd/pages/OpdNewClaimPage";
 // retired once Me → Claims → OPD covered the same queue, filters and all.
 import OpdDashboardScreen from "@features/finance/opd/dashboard/OpdDashboardScreen";
 import OpdClaimsTab from "@features/finance/opd/pages/OpdHistoryPage";
+import FinanceOverviewPage from "@features/finance/overview/FinanceOverviewPage";
 import CcDashboardPage from "@features/finance/cc/pages/CcDashboardPage";
 import CcNewTransactionsPage from "@features/finance/cc/pages/CcNewTransactionsPage";
 import CcPendingPage from "@features/finance/cc/pages/CcPendingPage";
@@ -317,6 +318,12 @@ export default function App() {
               </SriLankaRoute>
             }
           />
+          {/* Finance → Overview. One route for both dashboards, tab-switched
+              inside — see FinanceOverviewPage. The two screens it switches
+              between keep their own routes below too: nothing that already
+              linked straight to one of them (a bookmark, `cc-dashboard`'s old
+              rail favourite) should go dead. */}
+          <Route path="finance/overview" element={<FinanceOverviewPage />} />
           {/* Moved here out of the plain cc routes below: this is the same
               screen the "Dashboard" item used to point at when it lived
               inside Credit Card Expenses. */}

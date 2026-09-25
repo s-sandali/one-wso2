@@ -69,7 +69,7 @@ export default function NeedsYouTab() {
   const canLead = Boolean(expenseAppData.data?.enableLeadView);
   const canExpenseFinance = Boolean(expenseAppData.data?.enableFinanceView);
   const canOpd = opdHasRole(opdUserInfo.data, OPD_ROLE.FINANCE_APPROVER);
-  const myEmail = expenseAppData.data?.userInfo.workEmail ?? undefined;
+  const myEmail = expenseAppData.data?.userInfo?.workEmail ?? undefined;
 
   // Same toggle the Expense claims tab offers, for the same reason: someone
   // holding both flags decides one stage at a time, not a merged list. Opens

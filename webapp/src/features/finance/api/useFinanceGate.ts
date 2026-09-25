@@ -53,6 +53,11 @@ export function useFinanceGate(enabled = true): FinanceGate {
 
   const ccLeadOrFinance = ccHasAccess(cc.data, "lead") || ccHasAccess(cc.data, "finance");
   const ccFinance = ccHasAccess(cc.data, "finance");
+  // Whether there is a card to report on at all — granted from the backend's
+  // own CC-owner list (service.bal's `ACCESS_LEVEL_CC_OWNER`), not just
+  // "employee". A lead/finance role also earns the tab: they read the
+  // dashboard for their team or the company, not for a card of their own.
+  const ccHasOwnCard = ccHasAccess(cc.data, "cc_owner") || ccLeadOrFinance;
   const opdFinance = opdHasRole(opd.data, OPD_ROLE.FINANCE_APPROVER);
   const expenseLead = Boolean(expense.data?.enableLeadView);
   const expenseFinance = Boolean(expense.data?.enableFinanceView);
@@ -66,26 +71,32 @@ export function useFinanceGate(enabled = true): FinanceGate {
       // this entry appears at all.
       case "claim-approval":
         return opdFinance || expenseLead || expenseFinance;
-      // OPD analytics, in the Finance perspective. `routes.tsx:20-24` puts the
-      // source's dashboard behind View.FINANCE — it is every employee's spend,
-      // not your own — so the approver role is what opens it.
-      //
-      // `opd.isError` counts as a yes: a lookup that FAILED is not the same
-      // answer as one that came back without the role, and treating them alike
-      // would drop OPD out of the menu whenever its backend had a bad minute,
-      // with nothing on screen to say why. The screen behind it carries its own
-      // error notice and a retry.
-      case "opd-dashboard":
-        return opdFinance || opd.isError;
+      // Credit Card Expenses' three submitter-facing items — Pending
+      // Submissions, Pending Approvals, History — are each the reader's OWN
+      // transactions. Nothing to categorise, track or look back on without a
+      // card, so a lead/finance role earns them in too (reading a team's or
+      // the company's), same `ccHasOwnCard` as Overview's Credit Card tab.
+      case "cc-new":
+      case "cc-pending":
+      case "cc-history":
+        return ccHasOwnCard;
       case "cc-approve":
         return ccLeadOrFinance;
       case "cc-settings":
         return ccFinance;
-      // Finance → Overview → Credit Card Expenses dashboard. `requires:
-      // ["employee"]` on the registry item exists only to force this case —
-      // it is everyone's own numbers to read, same as the dashboard always was.
-      case "cc-dashboard":
-        return true;
+      // Finance → Overview. One rail entry for both dashboards now — see
+      // FinanceOverviewPage. Hidden entirely when NEITHER tab would have
+      // anything to show: no card of the reader's own (or team/company view
+      // via a CC lead/finance role) AND no OPD finance-approver role. A
+      // reader with only one of the two still opens straight onto that tab's
+      // content; there is no per-tab hiding inside the page.
+      //
+      // `opd.isError` counts as a yes, same reasoning as `claim-approval`
+      // above: a failed lookup is not the same answer as "no role", and
+      // hiding Overview because OPD's backend had a bad minute would be
+      // worse than showing a screen whose OPD tab can't load yet.
+      case "finance-overview":
+        return ccHasOwnCard || opdFinance || opd.isError;
       default:
         // Per-user views (New / Pending / History) are open; any other item
         // that declares `requires` but reaches here fails closed rather than
