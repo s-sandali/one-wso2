@@ -41,12 +41,12 @@ export default function FinanceShell({
   configured: boolean;
   configKey: string; // e.g. "ONE_WSO2_OPD_BACKEND_URL"
   /**
-   * Something to sit on this row instead of the eyebrow chip —
-   * FinanceOverviewPage's section switcher, so far the only caller of this.
-   * Replaces the chip rather than sitting beside it: the switcher already
-   * says which section is showing, so the chip would just repeat it.
-   * Optional and absent for every other screen, which keeps the chip exactly
-   * as before.
+   * Something to sit on the TITLE's row, right-aligned, in place of the
+   * eyebrow chip — FinanceOverviewPage's section switcher, so far the only
+   * caller of this. Replaces the chip rather than sitting beside it: the
+   * switcher already says which section is showing, so the chip would just
+   * repeat it. Optional and absent for every other screen, which keeps the
+   * chip exactly as before.
    */
   actions?: ReactNode;
   /**
@@ -70,12 +70,12 @@ export default function FinanceShell({
   const fillColumn = { flex: 1, minHeight: 0, display: "flex", flexDirection: "column" } as const;
   return (
     <Box sx={fill ? fillColumn : undefined}>
-      {/* `actions` present → just itself, right-aligned where it always sat
-          in the row it used to share with the chip. Absent → the chip alone,
-          left-aligned as ever. Never both: the switcher already says which
-          section is showing, so the chip would only repeat it. */}
-      <Stack direction="row" justifyContent={actions ? "flex-end" : "flex-start"} sx={{ mb: 0.5 }}>
-        {actions ?? (
+      {/* `actions` absent → the chip alone on its own row, left-aligned, as
+          ever. Present → no chip row at all; the switcher rides the TITLE's
+          row instead, right-aligned. Never both: the switcher already says
+          which section is showing, so the chip would only repeat it. */}
+      {!actions && (
+        <Stack direction="row" sx={{ mb: 0.5 }}>
           <Chip
             icon={<eyebrow.icon size={14} />}
             label={eyebrow.label}
@@ -88,11 +88,12 @@ export default function FinanceShell({
             size="small"
             sx={{ alignSelf: "flex-start" }}
           />
-        )}
+        </Stack>
+      )}
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
+        <Typography variant="h5">{title}</Typography>
+        {actions}
       </Stack>
-      <Typography variant="h5" sx={{ mb: 0.5 }}>
-        {title}
-      </Typography>
       {subtitle && (
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2.25, maxWidth: "70ch" }}>
           {subtitle}
