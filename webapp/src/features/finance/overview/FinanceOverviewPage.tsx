@@ -24,8 +24,13 @@ import OpdDashboardScreen from "../opd/dashboard/OpdDashboardScreen";
 
 type OverviewTab = "cc" | "opd";
 
+// "Credit Card", not "Credit Card Expenses" — that name already belongs to
+// the app-section entry in the Finance rail (Pending Submissions, Approve
+// Submissions, ...), a different destination from this dashboard. Same
+// label in two places meaning two different things is exactly the
+// confusion this drops.
 const OVERVIEW_SECTIONS: { value: OverviewTab; label: string }[] = [
-  { value: "cc", label: "Credit Card Expenses" },
+  { value: "cc", label: "Credit Card" },
   { value: "opd", label: "OPD Claims" },
 ];
 
