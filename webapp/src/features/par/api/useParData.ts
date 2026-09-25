@@ -21,7 +21,7 @@ import { useAccessToken } from "@hooks/useAccessToken";
 import { parBackendUrl, parServiceUrls } from "@config/apiConfig";
 import { digiopsHeaders } from "@features/my/util/digiopsHeaders";
 import type { ParCycle, ParEmployeeInfo, ParRating } from "./types";
-import { useParLeadEmployees, useParLegacyHistory } from "./useLeadHistory";
+import { useParLeadEmployees } from "./useLeadHistory";
 
 // GET par-app's own /employees/{workEmail} — carries `leadEmail`, the exact
 // field OngoingCycleView.tsx gates its tab set on. Not people-app's
@@ -149,72 +149,42 @@ export function useParHasActiveCycle(
 /**
  * Whether the "PAR" item under Me should be shown at all.
  *
- * Legacy par-app never hides its own menu entry for anyone (it always shows
- * "Employee Portal"/"PAR History" and falls back to an empty state) — but an
- * intern with no active cycle and no record of any kind, real or legacy,
- * lands on a History tab with nothing legitimate behind it, which reads as
- * broken rather than as "nothing here for you yet". This intentionally
- * diverges from legacy for exactly that case.
+ * Interns do not participate in PAR — confirmed directly, unconditionally:
+ * this hides the item for any intern regardless of whether they happen to
+ * have a lead or an active cycle in the data. Legacy par-app never hides
+ * its own menu entry for anyone (it always shows "Employee Portal"/"PAR
+ * History" and falls back to an empty state), so this intentionally
+ * diverges from legacy for this one employment type.
  *
- * Scoped to interns specifically, not to emptiness alone: par-app's own
- * `employeeTypes` config keeps INTERNSHIP eligible for cycles (config.toml),
- * so an intern currently in one keeps seeing PAR exactly like everyone else
- * — only the genuinely-nothing-yet case hides the item.
- *
- * "Real (post-migration) history" is `useClosedParCycles`, not a
- * per-cycle rating scan: `GET /par-cycles?email=&status=CLOSED` is already
- * filtered server-side to cycles where THIS employee has a `hris_par_rating`
- * row (db_queries.bal's `... IN (SELECT par_cycle_id FROM hris_par_rating
- * WHERE par_employee_email = ...)`), the exact query legacy's own "My
- * History" tab (ParHistory.tsx) uses for its upfront "No data available".
- * One cheap, pre-filtered call — not the N+1 a naive "check every closed
- * cycle" scan would need.
- *
- * Fails OPEN (visible), same reasoning as useParHasLead: a UX-only
- * visibility decision must never hide the item from someone who does have
- * something to see just because a fetch hasn't landed yet. Both history
- * checks only fire once we already know it's an intern with no active cycle
- * — no extra request for anyone else.
+ * An earlier version of this hook hid the item ONLY when an intern also had
+ * no active cycle and no real/legacy history — on the theory that par-app's
+ * own `employeeTypes` config listing INTERNSHIP as cycle-eligible
+ * (config.toml) meant an intern could legitimately be mid-cycle. In
+ * practice a test intern account with a lead and an active cycle assigned
+ * still saw the full tab set, which is wrong: interns don't have PAR, full
+ * stop, so eligibility-for-sync is not the same thing as "should see this
+ * screen." Simplified to a flat employment-type check — no cycle or
+ * history lookups needed here at all anymore.
  *
  * `employmentType` is compared case-insensitively against "internship". The
  * actual wire value is `"INTERNSHIP"` (uppercase): people-app's own
  * `/employees/{id}` and par-app both source this field from the SAME
  * `employment_type` master-data table via digiops-hr's shared `entity`
  * GraphQL service, whose own README documents the field's value set as
- * uppercase strings (`"PERMANENT" | "CONSULTANCY" | "INTERNSHIP" | ...`) —
- * matching par-app's own `employeeTypes` config.toml list. (An earlier
- * version of this comment cited title-case "Internship" from unrelated
- * services — ats/backend, career-vacancy-service, candidate-service — which
- * each define their own independent enum for candidate/offer workflows, not
- * the employment_type table this field actually reads from.) Comparing
- * case-insensitively means the exact casing doesn't matter either way.
+ * uppercase strings (`"PERMANENT" | "CONSULTANCY" | "INTERNSHIP" | ...`).
+ * Comparing case-insensitively means the exact casing doesn't matter either
+ * way.
+ *
+ * Fails OPEN (visible) while `employmentType` hasn't loaded yet, same
+ * reasoning as useParHasLead: a UX-only visibility decision must never hide
+ * the item from someone just because a fetch hasn't landed yet.
  */
 export function useParEmployeeItemVisible(
-  workEmail: string | undefined,
   employmentType: string | undefined,
-  workEmailLoading: boolean,
-  enabled = true,
+  isLoading: boolean,
 ): { canSee: boolean; isLoading: boolean } {
   const isIntern = employmentType?.toLowerCase() === "internship";
-  const { isActive, isLoading: isActiveLoading } = useParHasActiveCycle(
-    enabled ? workEmail : undefined,
-    workEmailLoading,
-  );
-  const checkHistory = enabled && isIntern && !isActiveLoading && !isActive;
-  const legacyHistory = useParLegacyHistory(workEmail, checkHistory);
-  const closedCycles = useClosedParCycles(workEmail, checkHistory);
-  const hasNothingToShow =
-    isIntern &&
-    !isActive &&
-    legacyHistory.isSuccess &&
-    legacyHistory.data.length === 0 &&
-    closedCycles.isSuccess &&
-    closedCycles.data.length === 0;
-  return {
-    canSee: !hasNothingToShow,
-    isLoading:
-      enabled && (isActiveLoading || (checkHistory && (legacyHistory.isLoading || closedCycles.isLoading))),
-  };
+  return { canSee: !isIntern, isLoading };
 }
 
 // Returns the caller's currently-OPEN par cycle (if any). Non-lead/non-admin

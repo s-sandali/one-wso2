@@ -370,10 +370,11 @@ export default function App() {
               (Employee Feedback / Request 360° Feedback / Provide 360°
               Feedback / F2F) rather than invented ones. See
               docs/ported-apps/par-app.md. Not gated beyond signing in —
-              every employee has their own PAR — except an intern with
-              nothing to show (no active cycle, no history of any kind),
-              who ParRequiresSomethingToShowRoute redirects to /me; same
-              shape as ParRequiresAdminRoute below. */}
+              every employee has their own PAR — except an intern, who
+              never does, regardless of lead or active-cycle status;
+              ParRequiresSomethingToShowRoute redirects them to /me. Same
+              shape as ParRequiresAdminRoute below. See
+              useParEmployeeItemVisible for the full reasoning. */}
           <Route
             path="me/performance"
             element={

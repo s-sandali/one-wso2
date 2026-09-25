@@ -124,20 +124,16 @@ export function ParRequiresActiveCycleRoute({ children }: { children: ReactNode 
   return <>{children}</>;
 }
 
-/** Guards the whole /me/performance subtree — someone with nothing to show
- * (no active cycle, no real or legacy history) is redirected to /me instead
- * of reaching a page the Me menu is already hiding. Same shape as
- * ParRequiresAdminRoute (App.tsx's own /people-ops/performance/admin guard):
- * the eligibility check wraps the page element from the outside, so hiding
- * the menu row is not the only thing enforcing this — same reasoning as
- * ParRequiresLeadRoute above. */
+/** Guards the whole /me/performance subtree — an intern (who has nothing to
+ * show here, full stop — see useParEmployeeItemVisible) is redirected to
+ * /me instead of reaching a page the Me menu is already hiding. Same shape
+ * as ParRequiresAdminRoute (App.tsx's own /people-ops/performance/admin
+ * guard): the eligibility check wraps the page element from the outside,
+ * so hiding the menu row is not the only thing enforcing this — same
+ * reasoning as ParRequiresLeadRoute above. */
 export function ParRequiresSomethingToShowRoute({ children }: { children: ReactNode }) {
   const profile = useMeProfile();
-  const { canSee, isLoading } = useParEmployeeItemVisible(
-    profile.data?.userInfo.workEmail,
-    profile.data?.employee?.employmentType,
-    profile.isLoading,
-  );
+  const { canSee, isLoading } = useParEmployeeItemVisible(profile.data?.employee?.employmentType, profile.isLoading);
   if (isLoading) return null;
   if (!canSee) return <Navigate to="/me" replace />;
   return <>{children}</>;

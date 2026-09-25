@@ -169,18 +169,16 @@ export function usePerspectiveVisibility(): PerspectiveVisibility {
   const parAdminPortalGate = useParIsAdmin();
 
   // The employee-facing "PAR" item under Me — see useParEmployeeItemVisible
-  // for why this hides for interns with nothing to show rather than always
-  // showing an empty History tab. `useMeProfile` (not `useUserInfo`) because
-  // `employmentType` only lives on the fuller /employees/{id} record; sharing
-  // its query key with every other `useMeProfile()` caller means this is a
-  // fresh request only the first time something asks, on Me. Only fetched
-  // while Me is active — every other perspective has no business asking.
+  // for why this hides for interns. `useMeProfile` (not `useUserInfo`)
+  // because `employmentType` only lives on the fuller /employees/{id}
+  // record; sharing its query key with every other `useMeProfile()` caller
+  // means this is a fresh request only the first time something asks, on
+  // Me. Only fetched while Me is active — every other perspective has no
+  // business asking.
   const meProfile = useMeProfile(undefined, active.key === "me");
   const parEmployeeItemGate = useParEmployeeItemVisible(
-    meProfile.data?.userInfo.workEmail,
     meProfile.data?.employee?.employmentType,
     meProfile.isLoading,
-    active.key === "me",
   );
 
   // UMT is the same shape of problem again: Product Management is
